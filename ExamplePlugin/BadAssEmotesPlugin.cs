@@ -368,8 +368,8 @@ namespace ExamplePlugin
             AddAnimation("WithoutYou", "WithoutYou", "WithoutYouLoop", true, true);
             AddAnimation("MikuLive", "MiluLive", "MikuLiveLoop", true, true);
             AddAnimation("MikuMikuBeam", "MikuMikuBeam", "MikuMikuBeamLoop", true, true);
-
-
+            
+            
             GameObject pressObject = Assets.Load<GameObject>($"assets/hydrolic/homedepot1.prefab");
             foreach (var item in pressObject.GetComponentsInChildren<Renderer>())
             {
