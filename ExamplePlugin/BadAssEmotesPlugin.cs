@@ -18,6 +18,9 @@ using UnityEngine.Animations;
 using UnityEngine.Networking;
 using BepInEx.Bootstrap;
 using BadAssEmotes;
+using RoR2.Projectile;
+using UnityEngine.UIElements;
+using HG;
 
 namespace ExamplePlugin
 {
@@ -329,7 +332,7 @@ namespace ExamplePlugin
             AddAnimation("CheerUp", "CheerUp", true, true, true);
             AddAnimation("CrissCross", "CrissCross", true, true, true);
             AddAnimation("NuthinButAGThang", "NuthinButAGThang", "NuthinButAGThangLoop", true, true);
-            AddAnimation("JabbaSwitchway", "SwitchAway", "JabbaSwitchwaLoopy", true, true);
+            AddAnimation("JabbaSwitchway", "SwitchAway", "JabbaSwitchwayLoop", true, true);
             AddAnimation("ByeByeBye", "ByeByeBye", "ByeByeByeLoop", true, true);
             AddAnimation("GoMufasa", "GoMufasa", true, true, true);
             AddAnimation("Snoop'sWalk", "Snoop_sWalk", "Snoop'sWalkLoop", true, true);
@@ -354,7 +357,7 @@ namespace ExamplePlugin
             AddAnimation("Independence", "Independence", "IndependenceLoop", true, true);
             AddAnimation("LaidBackShuffle", "LaidBackShuffle", true, true, true);
             AddAnimation("NoTears", "NoTears", "NoTearsLoop", true, true);
-            AddAnimation("Reaper'sShowtime", "ReapersShowtime", "Reaper'sShowtimeLoop", true, true);
+            AddAnimation("Reaper'sShowtime", "ReapersShowtime", "Reaper'sShowtimeLoop", true, false);
             AddAnimation("Revel", "Revel", true, true, true);
             AddAnimation("Riches", "Riches", "RichesLoop", true, true);
             AddAnimation("SignatureShuffle", "SignatureShuffle", true, true, true);
@@ -379,6 +382,7 @@ namespace ExamplePlugin
             changeHammer1 = Addressables.LoadAssetAsync<Material>("RoR2/Base/Brother/matBrotherStib.mat").WaitForCompletion();
             var changeHammer2 = Assets.Load<Material>("Assets/Prefabs/Materials/texMoonConcreteDiffuse.mat");
             changeHammer1 = Addressables.LoadAssetAsync<Material>("RoR2/Base/Brother/matBrotherHammer.mat").WaitForCompletion();
+            
 
             pressObject.AddComponent<HydrolicPressMechanism>();
             pressInt = CustomEmotesAPI.RegisterWorldProp(pressObject, new JoinSpot[] { new JoinSpot("HydrolicPressJoinSpot", new Vector3(0, .1f, 0)) });
@@ -390,21 +394,44 @@ namespace ExamplePlugin
 
             On.RoR2.Run.OnClientGameOver += Run_OnClientGameOver;
         }
-
-        public class RainbowGlowstick : MonoBehaviour
+        public class RainbowComponent : MonoBehaviour
         {
             public int red = 256;
             public int green = 0;
             public int blue = 0;
+            private List<ParticleSystem> particles = new List<ParticleSystem>();
+            private List<TrailRenderer> trails = new List<TrailRenderer>();
+            private List<Light> lights = new List<Light>();
+            private List<Renderer> renderers = new List<Renderer>();
             private bool hideUglyParticlesDoneWithCodeBecauseIDontWantToLoseThemInUnity = true;
+            public bool enableParticles = false;
+            public bool enableTrails = false;
+            public bool enableLights = false;
+            public bool enableRenderers = false;    
+
+            public void OnEnable()
+            {
+                if (enableParticles)
+                foreach (ParticleSystem componentsInChild in GetComponentsInChildren<ParticleSystem>())
+                    particles.Add(componentsInChild);
+                if (enableLights)
+                foreach (Light componentsInChild in GetComponentsInChildren<Light>())
+                    lights.Add(componentsInChild);
+                if (enableTrails)
+                foreach (TrailRenderer componentsInChild in GetComponentsInChildren<TrailRenderer>())
+                    trails.Add(componentsInChild);
+                if (enableRenderers)
+                foreach (Renderer componentsInChild in GetComponentsInChildren<Renderer>())
+                    renderers.Add(componentsInChild);
+            }
             public void Update()
             {
-                if (hideUglyParticlesDoneWithCodeBecauseIDontWantToLoseThemInUnity)
-                {
-                    foreach (ParticleSystem componentsInChild in GetComponentsInChildren<ParticleSystem>())
-                        componentsInChild.startColor = new Color(1f, 1f, 1f, 0);//componentsInChild.startColor.a);
-                    hideUglyParticlesDoneWithCodeBecauseIDontWantToLoseThemInUnity = false;
-                }
+                //if (hideUglyParticlesDoneWithCodeBecauseIDontWantToLoseThemInUnity)
+                //{
+                //    foreach (ParticleSystem componentsInChild in GetComponentsInChildren<ParticleSystem>())
+                //        componentsInChild.startColor = new Color(1f, 1f, 1f, 0);//componentsInChild.startColor.a);
+                //    hideUglyParticlesDoneWithCodeBecauseIDontWantToLoseThemInUnity = false;
+                //}
                 for (int i = 0; i < Settings.RainbowSpeed.Value; i++)
                 {
                     if (red >= 256 && blue <= 0)
@@ -432,17 +459,43 @@ namespace ExamplePlugin
                         blue--;
                     }
                 }
+                if (particles.Count > 0)
+                {
+                    foreach(ParticleSystem particle in particles)
+                        particle.startColor = new Color(red / 256f, green / 256f, blue / 256f, particle.startColor.a);
+                }
+                if (lights.Count > 0)
+                {
+                    foreach (Light componentsInChild in lights)
+                        componentsInChild.color = new Color(red / 256f, green / 256f, blue / 256f, componentsInChild.color.a);
+                }
+                if (trails.Count > 0)
+                {
+                    foreach (TrailRenderer componentsInChild in trails)
+                        componentsInChild.startColor = new Color(red / 256f, green / 256f, blue / 256f, componentsInChild.startColor.a);
+                }
+                if (renderers.Count > 0)
+                {
+                    foreach (Renderer renderer in renderers)
+                        renderer.material.color = new Color(red / 256f, green / 256f, blue / 256f, renderer.material.color.a);
+                }
+
                 
-                foreach (Light componentsInChild in GetComponentsInChildren<Light>())
-                    componentsInChild.color = new Color(red / 256f, green / 256f, blue / 256f, componentsInChild.color.a);
-                
-                foreach (TrailRenderer componentsInChild in GetComponentsInChildren<TrailRenderer>())
-                    componentsInChild.startColor = new Color(red / 256f, green / 256f, blue / 256f, componentsInChild.startColor.a);
             }
 
         }
 
-
+        private void AddRainbow(GameObject prefab, bool enableRainbowParticles = false, bool enableRainbowTrails = false, bool enableRainbowLights = false, bool enableRainbowRenderers = false)
+        {
+            if (!prefab.GetComponent<RainbowComponent>())
+            {
+                var component = prefab.AddComponent<RainbowComponent>();
+                component.enableParticles = enableRainbowParticles;
+                component.enableTrails = enableRainbowTrails;
+                component.enableLights = enableRainbowLights;
+                component.enableRenderers = enableRainbowRenderers;
+            }
+        }
         private void Run_OnClientGameOver(On.RoR2.Run.orig_OnClientGameOver orig, Run self, RunReport runReport)
         {
             orig(self, runReport);
@@ -487,7 +540,90 @@ namespace ExamplePlugin
                 BadAssEmotesPlugin.LPAC.affectors = transforms.ToArray();
             }
         }
+        public class CountdownPrefab : MonoBehaviour
+        {
+            public GameObject prefab;
+            public float timer = 0;
+            private float timer2 = 0;
+            public BoneMapper mapper;
+            public HumanBodyBones humanBodyBones;
+            public bool isHuman = false;
+            public bool destroyPrefab = false;
 
+            private void OnEnable()
+            {
+                if (destroyPrefab)
+                {
+                    prefab.transform.position += new Vector3(696969f, 0f, 696969f);
+                }
+            }
+            private void FixedUpdate()
+            {
+                
+                if (!prefab || !mapper)
+                {
+                    Destroy(this);
+                    return;
+                }
+                timer2 += Time.fixedDeltaTime;
+                if (timer2 >= timer)
+                {
+                    if (destroyPrefab)
+                    {
+                        prefab.transform.position -= new Vector3(696969f, 0f, 696969f);
+                    }
+                    prop1static = mapper.props.Count;
+                    var newPrefab = Instantiate(prefab);
+                    mapper.props.Add(newPrefab);
+                    Transform transform = mapper.transform.parent;
+                    if (isHuman)
+                    {
+                        transform = mapper.gameObject.GetComponent<Animator>().GetBoneTransform(humanBodyBones);
+                    }
+                    mapper.props[prop1static].transform.SetParent(transform);
+                    mapper.props[prop1static].transform.localEulerAngles = Vector3.zero;
+                    mapper.props[prop1static].transform.localPosition = Vector3.zero;
+                    mapper.ScaleProps();
+                    if (destroyPrefab)
+                    {
+                        Destroy(prefab);
+                        destroyPrefab = false;
+                    }
+                    Destroy(this);
+                }
+            }
+        }
+        private void CountDownPrefabSet(GameObject prefab, float timer, BoneMapper mapper, bool setThisToTrueIfYourPrefabAppearsAtMapOrigin = false)
+        {
+            if (mapper.gameObject.GetComponent<CountdownPrefab>())
+            {
+                Destroy(mapper.gameObject.GetComponent<CountdownPrefab>());
+            }
+            var component = mapper.gameObject.AddComponent<CountdownPrefab>();
+            component.timer = timer;
+            component.mapper = mapper;
+            component.prefab = prefab;
+            component.destroyPrefab = setThisToTrueIfYourPrefabAppearsAtMapOrigin;
+
+        }
+        private void InvokeSpawnPbject()
+        {
+                
+        }
+        private void CountDownPrefabSet(GameObject prefab, float timer, BoneMapper mapper, HumanBodyBones humanBodyBones, bool setThisToTrueIfYourPrefabAppearsAtMapOrigin = false)
+        {
+            if (mapper.gameObject.GetComponent<CountdownPrefab>())
+            {
+                Destroy(mapper.gameObject.GetComponent<CountdownPrefab>());
+            }
+            var component = mapper.gameObject.AddComponent<CountdownPrefab>();
+            component.timer = timer;
+            component.mapper = mapper;
+            component.prefab = prefab;
+            component.humanBodyBones = humanBodyBones;
+            component.isHuman = true;
+            component.destroyPrefab = setThisToTrueIfYourPrefabAppearsAtMapOrigin;
+        }
         private void CustomEmotesAPI_emoteSpotJoined_Prop(GameObject emoteSpot, BoneMapper joiner, BoneMapper host)
         {
             string emoteSpotName = emoteSpot.name;
@@ -702,16 +838,63 @@ namespace ExamplePlugin
             }
         }
 
+        // Pain
+        /*
+        public class NetworkPomPoms : NetworkBehaviour
+        {
+        [SyncVar]
+        Color pompomcolor = Color.white;
+            public void Start()
+            {
+                if (NetworkServer.active)
+                {
+                    pompomcolor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+                    Color newColor = pompomcolor;
+                    foreach (Renderer componentsInChild in gameObject.GetComponentsInChildren<Renderer>())
+                        componentsInChild.material.color = newColor;
+                    //SendColor(gameObject, newColor);
+                }
+                else
+                {
+                    GetColor(gameObject);
+                }
+                
+                
+            }
+            [Command]
+            void GetColor(GameObject gameObject)
+            {
+                
+                var color = gameObject.GetComponent<NetworkPomPoms>().pompomcolor;
+                Debug.Log("Get: " + color);
+                SendColor(gameObject, color);
+            }
+            [ClientRpc]
+            void SendColor(GameObject gameObject, Color color)
+            {
+                Debug.Log("Sent: " + color);
+                foreach (Renderer componentsInChild in gameObject.GetComponentsInChildren<Renderer>())
+                    componentsInChild.material.color = color;
+            }
+        }*/
+
+
         int stand = -1;
         List<BoneMapper> punchingMappers = new List<BoneMapper>();
         int prop1 = -1;
         int prop2 = -1;
+        static int prop1static = -1;
+        static int prop2static = -1;
         CameraTargetParams.CameraParamsOverrideHandle fovHandle;
         internal CharacterBody localBody = null;
         private void CustomEmotesAPI_animChanged(string newAnimation, BoneMapper mapper)
         {
             prop1 = -1;
             prop2 = -1;
+            prop1static = -1;
+            prop2static = -1;
+            if (mapper.GetComponent<CountdownPrefab>())
+                Destroy(mapper.GetComponent<CountdownPrefab>());
             try
             {
                 if (newAnimation != "none")
@@ -838,7 +1021,7 @@ namespace ExamplePlugin
                 mapper.SetAutoWalk(1, true);
                 mapper.ScaleProps();
             }
-            if (newAnimation == "BimBamBom" || newAnimation == "BimBamBomTest")
+            if (newAnimation == "BimBamBom")
             {
                 prop1 = mapper.props.Count;
                 mapper.props.Add(GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:assets/Prefabs/BimBamBom.prefab")));
@@ -856,13 +1039,35 @@ namespace ExamplePlugin
                 mapper.props[prop1].transform.localPosition = Vector3.zero;
                 mapper.ScaleProps();
             }
+            if (newAnimation == "ClickClickFlash")
+            {
+                var newPrefab = Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/ClickClickFlash.prefab");
+                CountDownPrefabSet(newPrefab, 0.63f, mapper, HumanBodyBones.RightHand);
+            }
+            if (newAnimation == "MikuLive")
+            {
+                var newPrefab = GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/MikuLiveVFX.prefab"));
+                prop1 = mapper.props.Count;
+
+                mapper.props.Add(newPrefab);
+                mapper.props[prop1].transform.SetParent(mapper.transform.parent);
+                mapper.props[prop1].transform.localEulerAngles = Vector3.zero;
+                mapper.props[prop1].transform.localPosition = Vector3.zero;
+                mapper.ScaleProps();
+            }
+            if (newAnimation == "MikuMikuBeam")
+            {
+                var newPrefab = Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/mikuBeamVFX.prefab");
+                CountDownPrefabSet(newPrefab, 0.366f, mapper);
+                mapper.ScaleProps();
+            }
             if (newAnimation == "CheerUp")
             {
                 var newPrefab = GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/badassemotes/PomPom.prefab"));
-                    foreach (Renderer componentsInChild in newPrefab.GetComponentsInChildren<Renderer>())
-                        componentsInChild.material.color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-                
-                
+                //newPrefab.AddComponent<NetworkPomPoms>();
+                foreach (Renderer componentsInChild in newPrefab.GetComponentsInChildren<Renderer>())
+                    componentsInChild.material.color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+
                 prop1 = mapper.props.Count;
                 mapper.props.Add(GameObject.Instantiate(newPrefab));
                 mapper.props[prop1].transform.SetParent(mapper.gameObject.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.LeftHand));
@@ -878,10 +1083,7 @@ namespace ExamplePlugin
             if (newAnimation == "Glowsticks")
             {
                 var newPrefab = GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/Glowstick.prefab"));
-                newPrefab.transform.localScale /= 2;
-                newPrefab.AddComponent<RainbowGlowstick>();
-                //foreach (Renderer componentsInChild in newPrefab.GetComponentsInChildren<Renderer>())
-                //    componentsInChild.material.color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+                AddRainbow(newPrefab, true, true, true, true);
                 prop1 = mapper.props.Count;
                 mapper.props.Add(GameObject.Instantiate(newPrefab));
                 mapper.props[prop1].transform.SetParent(mapper.gameObject.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.LeftHand));
@@ -896,12 +1098,30 @@ namespace ExamplePlugin
             }
             if (newAnimation == "Reaper'sShowtime")
             {
+                var hamemrPrefab = GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/BrotherSword.prefab"));
                 prop1 = mapper.props.Count;
-                mapper.props.Add(GameObject.Instantiate(Assets.Load<GameObject>("@BadAssEmotes_badassemotes:Assets/Prefabs/BrotherSword.prefab"))); //<-- FUCK THIS SHIT
+                mapper.props.Add(hamemrPrefab);
                 mapper.props[prop1].transform.SetParent(mapper.transform.parent);
                 mapper.props[prop1].transform.localEulerAngles = Vector3.zero;
                 mapper.props[prop1].transform.localPosition = Vector3.zero;
+                
+                var newPrefab = GameObject.Instantiate(Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Brother/BrotherFirePillarGhost.prefab").WaitForCompletion());
+                
+                if (newPrefab.GetComponent<ProjectileGhostController>())
+                {
+                    Destroy(newPrefab.GetComponent<ProjectileGhostController>());
+                }
+                if (newPrefab.GetComponent<ShakeEmitter>())
+                {
+                    Destroy(newPrefab.GetComponent<ShakeEmitter>());
+                }
+                if (newPrefab.GetComponent<Light>())
+                {
+                    newPrefab.GetComponent<Light>().intensity /= 2;
+                }
+                CountDownPrefabSet(newPrefab, 0.6f, mapper, true);
                 mapper.ScaleProps();
+
             }
             if (newAnimation == "Float")
             {
